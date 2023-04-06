@@ -387,14 +387,31 @@ void tcg_gen_setcond_i32(TCGCond cond, TCGv_i32 ret,
     } else if (cond == TCG_COND_NEVER) {
         tcg_gen_movi_i32(ret, 0);
     } else {
+
+        TCGv_i32 copy_arg1 = arg1;
+        TCGv_i32 copy_arg2 = arg2;
+        if (ret == arg1) {
+            copy_arg1 = tcg_temp_new_i32();
+            tcg_gen_mov_i32(copy_arg1, arg1);
+        }
+        if (ret == arg1) {
+            copy_arg2 = tcg_temp_new_i32();
+            tcg_gen_mov_i32(copy_arg2, arg2);
+        }
+
         tcg_gen_op4i_i32(INDEX_op_setcond_i32, ret, arg1, arg2, cond);
         TCGv_i32 cond_temp = tcg_const_i32(cond);
         gen_helper_sym_setcond_i32(
             tcgv_i32_expr(ret), cpu_env,
-            arg1, tcgv_i32_expr(arg1),
-            arg2, tcgv_i32_expr(arg2),
+            copy_arg1, tcgv_i32_expr(arg1),
+            copy_arg2, tcgv_i32_expr(arg2),
             cond_temp, ret);
         tcg_temp_free_i32(cond_temp);
+
+        if (ret == arg1)
+            tcg_temp_free_i32(copy_arg1);
+        if (ret == arg2)
+            tcg_temp_free_i32(copy_arg2);
     }
 }
 
@@ -1743,6 +1760,18 @@ void tcg_gen_setcond_i64(TCGCond cond, TCGv_i64 ret,
     } else if (cond == TCG_COND_NEVER) {
         tcg_gen_movi_i64(ret, 0);
     } else {
+
+        TCGv_i64 copy_arg1 = arg1;
+        TCGv_i64 copy_arg2 = arg2;
+        if (ret == arg1) {
+            copy_arg1 = tcg_temp_new_i64();
+            tcg_gen_mov_i64(copy_arg1, arg1);
+        }
+        if (ret == arg1) {
+            copy_arg2 = tcg_temp_new_i64();
+            tcg_gen_mov_i64(copy_arg2, arg2);
+        }
+
         if (TCG_TARGET_REG_BITS == 32) {
             tcg_gen_op6i_i32(INDEX_op_setcond2_i32, TCGV_LOW(ret),
                              TCGV_LOW(arg1), TCGV_HIGH(arg1),
@@ -1755,10 +1784,15 @@ void tcg_gen_setcond_i64(TCGCond cond, TCGv_i64 ret,
         TCGv_i32 cond_temp = tcg_const_i32(cond);
         gen_helper_sym_setcond_i64(
             tcgv_i64_expr(ret), cpu_env,
-            arg1, tcgv_i64_expr(arg1),
-            arg2, tcgv_i64_expr(arg2),
+            copy_arg1, tcgv_i64_expr(arg1),
+            copy_arg2, tcgv_i64_expr(arg2),
             cond_temp, ret);
         tcg_temp_free_i32(cond_temp);
+
+        if (ret == arg1)
+            tcg_temp_free_i64(copy_arg1);
+        if (ret == arg2)
+            tcg_temp_free_i64(copy_arg2);
     }
 }
 
